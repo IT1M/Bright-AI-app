@@ -1,10 +1,7 @@
 import React from 'react';
-import { Text, View } from 'react-native';
+import BlogScreenComponent from '../../src/BlogScreen.js'; // Import the new screen
 
-export default function BlogScreen() {
-  return (
-    <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
-      <Text>Blog Screen</Text>
-    </View>
-  );
+export default function BlogTabScreen() {
+  // Render the imported BlogScreen component
+  return <BlogScreenComponent />;
 }
