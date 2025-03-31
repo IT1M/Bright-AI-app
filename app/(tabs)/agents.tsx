@@ -9,12 +9,13 @@ const numColumns = 2; // Number of columns in the grid
 const itemMargin = SIZES.padding / 2; // Margin around items
 const itemWidth = (width - itemMargin * (numColumns + 1)) / numColumns; // Calculate item width based on columns and margins
 
-// Define the agent data with icons
+// Define the agent data with icons and short descriptions
 const agents = [
   {
     id: '1',
     name: 'BrightSupport',
     description: 'روبوت محادثة متخصص في خدمة العملاء، يقدم دعماً فورياً على مدار الساعة ويحل المشكلات الشائعة بكفاءة عالية.',
+    shortDescription: 'روبوت خدمة عملاء', // Added short description
     placeholder: 'كيف يمكنني مساعدتك اليوم؟',
     icon: 'headset', // Icon for support
   },
@@ -22,6 +23,7 @@ const agents = [
     id: '2',
     name: 'BrightSales',
     description: 'روبوت ذكي يساعد في تأهيل العملاء المحتملين وزيادة المبيعات من خلال التفاعل الشخصي والإجابة على استفسارات المنتجات.',
+    shortDescription: 'روبوت مبيعات', // Added short description
     placeholder: 'هل لديك أي استفسار عن منتجاتنا؟',
     icon: 'chart-line', // Icon for sales/growth
   },
@@ -29,6 +31,7 @@ const agents = [
     id: '3',
     name: 'BrightRecruiter',
     description: 'روبوت متخصص في عمليات التوظيف، يساعد في فرز السير الذاتية وإجراء المقابلات الأولية وتقييم المرشحين بكفاءة.',
+    shortDescription: 'روبوت توظيف', // Added short description
     placeholder: 'أخبرني عن خبراتك أو اسأل عن الوظائف الشاغرة...',
     icon: 'user-tie', // Icon for recruitment/professional
   },
@@ -36,6 +39,7 @@ const agents = [
     id: '4',
     name: 'BrightProject',
     description: 'روبوت إدارة مشاريع ذكي يساعد في تنظيم المهام ومتابعة التقدم وتحسين التواصل بين أعضاء الفريق.',
+    shortDescription: 'روبوت إدارة مشاريع', // Added short description
     placeholder: 'ما هي المهمة التي تريد تنظيمها أو متابعتها؟',
     icon: 'tasks', // Icon for project management/tasks
   },
@@ -43,6 +47,7 @@ const agents = [
     id: '5',
     name: 'BrightMath',
     description: 'مساعد متخصص في تعليم الرياضيات للطلاب الثانوية ومساعدتك في المشاريع، يقدم شرحاً مفصلاً وحلولاً للمسائل الرياضية بأسلوب سهل وتفاعلي.',
+    shortDescription: 'مساعد رياضيات', // Added short description
     placeholder: 'ما هي المسألة الرياضية التي تحتاج مساعدة فيها؟',
     icon: 'calculator', // Icon for math
   },
@@ -50,21 +55,25 @@ const agents = [
     id: '6',
     name: 'BrightTourism',
     description: 'مرشد سياحي ذكي يقدم معلومات شاملة عن المواقع السياحية والتراثية في المملكة العربية السعودية.',
+    shortDescription: 'مرشد سياحي', // Added short description
     placeholder: 'عن أي معلم سياحي في السعودية تود أن تسأل؟',
     icon: 'map-marked-alt', // Icon for tourism/maps
   },
 ];
 
+// Define the type for an agent item, including the new shortDescription
+type Agent = typeof agents[0];
+
 export default function AgentsScreen() {
 
-  const renderAgentItem = ({ item: agent }: { item: typeof agents[0] }) => (
+  const renderAgentItem = ({ item: agent }: { item: Agent }) => ( // Use the Agent type
      <Link
         key={agent.id} // Key should be on the outermost element in the map/renderItem
         href={{
             pathname: `/chat/${agent.id}` as any, // Cast to any to satisfy typed routes
-                params: { // Pass data needed by the chat screen
+                params: { // Pass data needed by the chat screen (including full description)
                     agentName: agent.name,
-                    description: agent.description,
+                    description: agent.description, // Pass the original full description
                     placeholderText: agent.placeholder
                 }
               }}
@@ -79,8 +88,8 @@ export default function AgentsScreen() {
             {/* Text below the icon */}
             <View style={styles.agentTextContainer}>
                 <Text style={styles.agentName}>{agent.name}</Text>
-                {/* Removed numberOfLines to show full description */}
-                <Text style={styles.agentDescription}>{agent.description}</Text>
+                {/* Display the short description */}
+                <Text style={styles.agentDescription}>{agent.shortDescription}</Text>
             </View>
             {/* Info icon can be placed differently if needed, or removed for grid simplicity */}
             {/* <FontAwesome5 name="info-circle" size={22} color={COLORS.lightGray} style={styles.infoIcon} /> */}

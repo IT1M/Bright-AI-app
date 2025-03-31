@@ -14,7 +14,10 @@ import {
   Platform,
   StatusBar,
   SafeAreaView,
-  Linking
+  Linking,
+  KeyboardAvoidingView, 
+  Keyboard, 
+  TouchableWithoutFeedback
 } from 'react-native';
 import { COLORS, FONTS, SIZES } from './theme.js';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -233,122 +236,129 @@ const VirtualAssistant = ({ onError }) => {
         onRequestClose={() => setIsOpen(false)}
       >
         <SafeAreaView style={styles.modalContainer}>
-          <View style={styles.modalContent}>
-            <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle}>المساعد الافتراضي</Text>
-              <View style={styles.headerButtons}>
-                <TouchableOpacity 
-                  onPress={handleClearChat} 
-                  style={styles.headerButton}
-                  disabled={messages.length === 0}
+          <KeyboardAvoidingView
+            style={styles.modalContent}
+            behavior={Platform.OS === 'ios' ? 'padding' : 'height'} // Adjust for keyboard
+          >
+            <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
+              <View style={{ flex: 1 }}>
+                <View style={styles.modalHeader}>
+                  <Text style={styles.modalTitle}>المساعد الافتراضي</Text>
+                  <View style={styles.headerButtons}>
+                    <TouchableOpacity 
+                      onPress={handleClearChat} 
+                      style={styles.headerButton}
+                      disabled={messages.length === 0}
+                    >
+                      <FontAwesome5 
+                        name="trash-alt" 
+                        size={16} 
+                        color={messages.length === 0 ? COLORS.lightGray : COLORS.accent} 
+                      />
+                    </TouchableOpacity>
+                    <TouchableOpacity onPress={() => setIsOpen(false)} style={styles.headerButton}>
+                      <FontAwesome5 name="times" size={18} color={COLORS.accent} />
+                    </TouchableOpacity>
+                  </View>
+                </View>
+                
+                <ScrollView 
+                  style={styles.messagesContainer}
+                  ref={scrollViewRef}
+                  contentContainerStyle={styles.messagesContentContainer}
                 >
-                  <FontAwesome5 
-                    name="trash-alt" 
-                    size={16} 
-                    color={messages.length === 0 ? COLORS.lightGray : COLORS.accent} 
-                  />
-                </TouchableOpacity>
-                <TouchableOpacity onPress={() => setIsOpen(false)} style={styles.headerButton}>
-                  <FontAwesome5 name="times" size={18} color={COLORS.accent} />
-                </TouchableOpacity>
-              </View>
-            </View>
-            
-            <ScrollView 
-              style={styles.messagesContainer}
-              ref={scrollViewRef}
-              contentContainerStyle={styles.messagesContentContainer}
-            >
-              {messages.length === 0 ? (
-                <View style={styles.welcomeMessageContainer}>
-                  <FontAwesome5 name="robot" size={40} color={COLORS.primary} style={styles.welcomeIcon} />
-                  <Text style={styles.welcomeMessage}>
-                    مرحباً! أنا المساعد الافتراضي الخاص بك. كيف يمكنني مساعدتك اليوم؟
-                  </Text>
-                  <View style={styles.suggestionContainer}>
-                    <TouchableOpacity 
-                      style={styles.suggestionButton}
-                      onPress={() => {
-                        setInput('كيف يمكنني استخدام تحليل البيانات في تطبيق Bright AI؟');
-                      }}
-                    >
-                      <Text style={styles.suggestionText}>كيف يمكنني استخدام تحليل البيانات؟</Text>
-                    </TouchableOpacity>
-                    <TouchableOpacity 
-                      style={styles.suggestionButton}
-                      onPress={() => {
-                        setInput('ما هي الخدمات التي يقدمها تطبيق Bright AI؟');
-                      }}
-                    >
-                      <Text style={styles.suggestionText}>ما هي الخدمات المتاحة؟</Text>
-                    </TouchableOpacity>
-                  </View>
-                </View>
-              ) : (
-                messages.map((msg, index) => (
-                  <View 
-                    key={index} 
-                    style={[
-                      styles.messageBubble,
-                      msg.role === 'user' ? styles.userMessage : styles.assistantMessage
-                    ]}
-                  >
-                    {msg.role === 'assistant' && (
-                      <View style={styles.assistantAvatar}>
-                        <FontAwesome5 name="robot" size={14} color={COLORS.white} />
+                  {messages.length === 0 ? (
+                    <View style={styles.welcomeMessageContainer}>
+                      <FontAwesome5 name="robot" size={40} color={COLORS.primary} style={styles.welcomeIcon} />
+                      <Text style={styles.welcomeMessage}>
+                        مرحباً! أنا المساعد الافتراضي الخاص بك. كيف يمكنني مساعدتك اليوم؟
+                      </Text>
+                      <View style={styles.suggestionContainer}>
+                        <TouchableOpacity 
+                          style={styles.suggestionButton}
+                          onPress={() => {
+                            setInput('كيف يمكنني استخدام تحليل البيانات في تطبيق Bright AI؟');
+                          }}
+                        >
+                          <Text style={styles.suggestionText}>كيف يمكنني استخدام تحليل البيانات؟</Text>
+                        </TouchableOpacity>
+                        <TouchableOpacity 
+                          style={styles.suggestionButton}
+                          onPress={() => {
+                            setInput('ما هي الخدمات التي يقدمها تطبيق Bright AI؟');
+                          }}
+                        >
+                          <Text style={styles.suggestionText}>ما هي الخدمات المتاحة؟</Text>
+                        </TouchableOpacity>
                       </View>
-                    )}
-                    <Text style={[
-                      styles.messageText,
-                      msg.role === 'user' ? styles.userMessageText : styles.assistantMessageText,
-                      { textAlign: 'justify', lineHeight: 24, flexWrap: 'wrap', width: '100%' } // Ensure proper formatting on mobile
-                    ]}>
-                      {msg.content}
-                    </Text>
-                  </View>
-                ))
-              )}
-              {isLoading && (
-                <View style={styles.loadingContainer}>
-                  <ActivityIndicator size="small" color={COLORS.primary} />
-                  <Text style={styles.loadingText}>جاري التفكير...</Text>
+                    </View>
+                  ) : (
+                    messages.map((msg, index) => (
+                      <View 
+                        key={index} 
+                        style={[
+                          styles.messageBubble,
+                          msg.role === 'user' ? styles.userMessage : styles.assistantMessage
+                        ]}
+                      >
+                        {msg.role === 'assistant' && (
+                          <View style={styles.assistantAvatar}>
+                            <FontAwesome5 name="robot" size={14} color={COLORS.white} />
+                          </View>
+                        )}
+                        <Text style={[
+                          styles.messageText,
+                          msg.role === 'user' ? styles.userMessageText : styles.assistantMessageText,
+                          { textAlign: 'justify', lineHeight: 24, flexWrap: 'wrap', width: '100%' } // Ensure proper formatting on mobile
+                        ]}>
+                          {msg.content}
+                        </Text>
+                      </View>
+                    ))
+                  )}
+                  {isLoading && (
+                    <View style={styles.loadingContainer}>
+                      <ActivityIndicator size="small" color={COLORS.primary} />
+                      <Text style={styles.loadingText}>جاري التفكير...</Text>
+                    </View>
+                  )}
+                  {error && (
+                    <View style={styles.errorContainer}>
+                      <FontAwesome5 name="exclamation-circle" size={16} color="#D32F2F" style={styles.errorIcon} />
+                      <Text style={styles.errorText}>{error}</Text>
+                    </View>
+                  )}
+                </ScrollView>
+                
+                <View style={styles.inputContainer}>
+                  <TextInput
+                    style={styles.input}
+                    value={input}
+                    onChangeText={setInput}
+                    placeholder="اكتب سؤالك هنا..."
+                    placeholderTextColor={COLORS.lightGray}
+                    multiline
+                    textAlign="right"
+                    maxLength={500}
+                    returnKeyType="send"
+                    onSubmitEditing={() => input.trim() && handleSend()}
+                  />
+                  <TouchableOpacity 
+                    style={[styles.sendButton, !input.trim() && styles.sendButtonDisabled]} 
+                    onPress={handleSend}
+                    disabled={!input.trim() || isLoading}
+                    activeOpacity={0.7}
+                  >
+                    <FontAwesome5 
+                      name="paper-plane" 
+                      size={18} 
+                      color={!input.trim() || isLoading ? COLORS.lightGray : COLORS.white} 
+                    />
+                  </TouchableOpacity>
                 </View>
-              )}
-              {error && (
-                <View style={styles.errorContainer}>
-                  <FontAwesome5 name="exclamation-circle" size={16} color="#D32F2F" style={styles.errorIcon} />
-                  <Text style={styles.errorText}>{error}</Text>
-                </View>
-              )}
-            </ScrollView>
-            
-            <View style={styles.inputContainer}>
-              <TextInput
-                style={styles.input}
-                value={input}
-                onChangeText={setInput}
-                placeholder="اكتب سؤالك هنا..."
-                placeholderTextColor={COLORS.lightGray}
-                multiline
-                textAlign="right"
-                maxLength={500}
-                returnKeyType="send"
-                onSubmitEditing={() => input.trim() && handleSend()}
-              />
-              <TouchableOpacity 
-                style={[styles.sendButton, !input.trim() && styles.sendButtonDisabled]} 
-                onPress={handleSend}
-                disabled={!input.trim() || isLoading}
-                activeOpacity={0.7}
-              >
-                <FontAwesome5 
-                  name="paper-plane" 
-                  size={18} 
-                  color={!input.trim() || isLoading ? COLORS.lightGray : COLORS.white} 
-                />
-              </TouchableOpacity>
-            </View>
-          </View>
+              </View>
+            </TouchableWithoutFeedback>
+          </KeyboardAvoidingView>
         </SafeAreaView>
       </Modal>
     </>
@@ -932,36 +942,37 @@ const styles = StyleSheet.create({
     flexShrink: 1, // Allow text to wrap
   },
   inputContainer: {
-    flexDirection: 'row', // Keep row
-    alignItems: 'flex-end', // Align items to bottom for multiline input
+    flexDirection: 'row',
+    alignItems: 'flex-end',
     borderTopWidth: 1,
     borderTopColor: COLORS.lightGray,
     paddingTop: SIZES.padding,
-    paddingHorizontal: SIZES.padding, // Add horizontal padding
-    paddingBottom: SIZES.padding / 2, // Add bottom padding
+    paddingHorizontal: SIZES.padding,
+    paddingBottom: SIZES.padding / 2,
+    backgroundColor: COLORS.white, // Ensure background color matches modal
   },
   input: {
     flex: 1,
     ...FONTS.body3,
     color: COLORS.text,
-    backgroundColor: '#F0F0F0', // Slightly darker input background
-    borderRadius: SIZES.radius * 1.5, // Match other radii
-    paddingHorizontal: SIZES.padding * 1.5, // Increase horizontal padding
-    paddingTop: SIZES.padding * 1.2, // Adjust top padding
-    paddingBottom: SIZES.padding * 1.2, // Adjust bottom padding
-    marginRight: SIZES.padding, // Use margin right for LTR layout
-    minHeight: 48, // Ensure minimum height
-    maxHeight: 120, // Increase max height
-    textAlign: 'left', // Align text left
+    backgroundColor: '#F0F0F0',
+    borderRadius: SIZES.radius * 1.5,
+    paddingHorizontal: SIZES.padding * 1.5,
+    paddingTop: SIZES.padding * 1.2,
+    paddingBottom: SIZES.padding * 1.2,
+    marginRight: SIZES.padding,
+    minHeight: 48,
+    maxHeight: 120,
+    textAlign: 'left',
   },
   sendButton: {
     backgroundColor: COLORS.primary,
-    borderRadius: SIZES.radius * 1.5, // Match input radius
-    padding: SIZES.padding * 1.2, // Match input padding
+    borderRadius: SIZES.radius * 1.5,
+    padding: SIZES.padding * 1.2,
     justifyContent: 'center',
     alignItems: 'center',
-    height: 48, // Match minimum input height
-    width: 48, // Make it square
+    height: 48,
+    width: 48,
   },
   sendButtonDisabled: {
     backgroundColor: COLORS.lightGray,
