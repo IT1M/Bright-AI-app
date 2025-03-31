@@ -69,6 +69,13 @@ export default function TabLayout() {
           tabBarIcon: ({ color, size }) => <FontAwesome5 name="shopping-bag" size={size} color={color} />,
         }}
       />
+      <Tabs.Screen
+        name="DataAnalysis1" // Use the actual filename
+        options={{
+          title: 'تحليل البيانات', // Data Analysis in Arabic
+          tabBarIcon: ({ color, size }) => <FontAwesome5 name="chart-line" size={size} color={color} />,
+        }}
+      />
     </Tabs>
   );
 }
