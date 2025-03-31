@@ -300,7 +300,8 @@ const VirtualAssistant = ({ onError }) => {
                     )}
                     <Text style={[
                       styles.messageText,
-                      msg.role === 'user' ? styles.userMessageText : styles.assistantMessageText
+                      msg.role === 'user' ? styles.userMessageText : styles.assistantMessageText,
+                      { textAlign: 'justify', lineHeight: 24, flexWrap: 'wrap', width: '100%' } // Ensure proper formatting on mobile
                     ]}>
                       {msg.content}
                     </Text>
@@ -730,49 +731,46 @@ const styles = StyleSheet.create({
     textAlign: 'center', // Center section title
   },
   featuresGrid: {
-    flexDirection: 'row', // Keep as row
+    flexDirection: 'row',
     flexWrap: 'wrap',
-    justifyContent: 'space-around', // Distribute space around items
-    marginHorizontal: -SIZES.padding / 2, // Counteract card margin
+    justifyContent: 'space-between',
+    paddingHorizontal: SIZES.padding,
   },
   featureCard: {
-    width: '47%', // Slightly reduce width for better spacing
+    width: '100%', // Make cards take full width
     backgroundColor: COLORS.white,
-    borderRadius: SIZES.radius * 1.5, // Match button radius
-    paddingVertical: SIZES.padding * 1.8, // Slightly reduce vertical padding
-    paddingHorizontal: SIZES.padding * 1.5, // Keep horizontal padding
-    marginBottom: SIZES.padding * 2, // Keep increased bottom margin
-    alignItems: 'center', // Center card content horizontally
-    justifyContent: 'center', // Center content vertically again
+    borderRadius: SIZES.radius * 1.5,
+    paddingVertical: SIZES.padding * 2, // Increased padding for larger cards
+    paddingHorizontal: SIZES.padding * 2, // Increased padding for larger cards
+    marginBottom: SIZES.padding * 2, // Increased bottom margin for better spacing
+    alignItems: 'center',
+    justifyContent: 'center',
     elevation: 3,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.1,
     shadowRadius: 2,
-    marginHorizontal: SIZES.padding / 2, // Add horizontal margin
   },
   featureIconContainer: {
-    width: 50,
-    height: 50,
-    borderRadius: 25,
-    backgroundColor: COLORS.secondary, // Use secondary color for icon background
+    width: 80, // Increased size for better visibility
+    height: 80,
+    borderRadius: 40,
+    backgroundColor: COLORS.secondary,
     justifyContent: 'center',
     alignItems: 'center',
     marginBottom: SIZES.padding,
   },
   featureTitle: {
-    ...FONTS.h4,
-    fontSize: SIZES.h4 * 0.9, // Slightly smaller font size
+    ...FONTS.h3, // Increased font size for better readability
     color: COLORS.primary,
     marginBottom: SIZES.padding / 2,
-    textAlign: 'center', // Center feature title
+    textAlign: 'center',
   },
   featureDescription: {
-    ...FONTS.body4,
-    fontSize: SIZES.body4 * 0.95, // Slightly smaller font size
+    ...FONTS.body3, // Increased font size for better readability
     color: COLORS.text,
-    textAlign: 'center', // Center feature description
-    lineHeight: SIZES.body4LineHeight || 18,
+    textAlign: 'center',
+    lineHeight: SIZES.body3LineHeight || 24, // Increased line height for readability
   },
 
   // Virtual Assistant Styles
@@ -813,40 +811,17 @@ const styles = StyleSheet.create({
     borderTopRightRadius: SIZES.radius * 2,
     height: height * 0.8, // Increased height
     padding: SIZES.padding,
-    paddingBottom: SIZES.padding * 2, // Add more padding at the bottom
-  },
-  modalHeader: {
-    flexDirection: 'row', // Keep row direction
-    justifyContent: 'space-between', // Space between title and buttons
-    alignItems: 'center',
-    marginBottom: SIZES.padding,
-    borderBottomWidth: 1,
-    borderBottomColor: COLORS.lightGray,
-    paddingBottom: SIZES.padding, // Increased padding
-    paddingHorizontal: SIZES.padding, // Add horizontal padding
-  },
-  modalTitle: {
-    ...FONTS.h2,
-    color: COLORS.primary,
-    textAlign: 'center', // Center title
-    flex: 1, // Allow title to take available space
-    marginLeft: 60, // Offset for buttons
-  },
-  headerButtons: {
-    flexDirection: 'row', // Keep row
-    alignItems: 'center',
-  },
-  headerButton: {
-    marginLeft: SIZES.padding * 1.5,
-    padding: 5,
+    paddingBottom: SIZES.padding * 2,
+    width: '100%', // Ensure full width
   },
   messagesContainer: {
     flex: 1,
     marginBottom: SIZES.padding,
-    paddingHorizontal: SIZES.padding, // Add horizontal padding
+    paddingHorizontal: SIZES.padding / 2, // Reduce horizontal padding for more space
   },
   messagesContentContainer: {
-     paddingBottom: SIZES.padding * 2, // Ensure space at the bottom
+    paddingBottom: SIZES.padding * 2,
+    width: '100%', // Ensure full width
   },
   welcomeMessageContainer: {
     alignItems: 'center',
@@ -887,9 +862,10 @@ const styles = StyleSheet.create({
     paddingHorizontal: SIZES.padding * 1.2, // Adjusted padding
     borderRadius: SIZES.radius * 1.5, // Match other radii
     marginBottom: SIZES.padding, // Increased margin
-    maxWidth: '85%', // Slightly wider bubbles
+    maxWidth: '100%', // Allow bubbles to span more width
     flexDirection: 'row', // Use row for avatar alignment
     alignItems: 'flex-end', // Align items at the bottom
+    alignSelf: 'center', // Center-align bubbles
   },
   userMessage: {
     backgroundColor: COLORS.primary,
