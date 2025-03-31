@@ -1,8 +1,13 @@
 import React from 'react';
-import { View, Text, StyleSheet, ScrollView, SafeAreaView, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet, FlatList, SafeAreaView, TouchableOpacity, Dimensions } from 'react-native'; // Import FlatList and Dimensions
 import { Link } from 'expo-router'; // Import Link for navigation
 import { COLORS, SIZES, FONTS } from '../../src/theme'; // Adjust path if necessary
 import { FontAwesome5 } from '@expo/vector-icons'; // For list item icon
+
+const { width } = Dimensions.get('window'); // Get screen width
+const numColumns = 2; // Number of columns in the grid
+const itemMargin = SIZES.padding / 2; // Margin around items
+const itemWidth = (width - itemMargin * (numColumns + 1)) / numColumns; // Calculate item width based on columns and margins
 
 // Define the agent data with icons
 const agents = [
@@ -51,45 +56,51 @@ const agents = [
 ];
 
 export default function AgentsScreen() {
-  return (
-    <SafeAreaView style={styles.safeArea}>
-      <View style={styles.container}>
-        <Text style={styles.title}>اختر الوكيل المناسب لك  وشاهد مُشرقة وهي تجعل عمل ساعات ينتهي بثوانٍ</Text>
-        <ScrollView
-          style={styles.scrollView}
-          contentContainerStyle={styles.scrollViewContent}
-          showsVerticalScrollIndicator={false}
-        >
-          {agents.map((agent) => (
-            // Use Link to navigate, passing agent data as query params
-            <Link
-              key={agent.id}
-              href={{
-                pathname: `/chat/${agent.id}` as any, // Cast to any to satisfy typed routes
+
+  const renderAgentItem = ({ item: agent }: { item: typeof agents[0] }) => (
+     <Link
+        key={agent.id} // Key should be on the outermost element in the map/renderItem
+        href={{
+            pathname: `/chat/${agent.id}` as any, // Cast to any to satisfy typed routes
                 params: { // Pass data needed by the chat screen
                     agentName: agent.name,
                     description: agent.description,
                     placeholderText: agent.placeholder
                 }
               }}
-              asChild // Use TouchableOpacity as the child component for styling/press handling
-            >
-              <TouchableOpacity style={styles.agentItem}>
-                 {/* Icon on the right */}
-                <View style={styles.iconContainer}>
-                   <FontAwesome5 name={agent.icon} size={24} color={COLORS.primary} />
-                </View>
-                {/* Text on the left */}
-                <View style={styles.agentTextContainer}>
-                    <Text style={styles.agentName}>{agent.name}</Text>
-                    <Text style={styles.agentDescription} numberOfLines={2}>{agent.description}</Text>
-                </View>
-                {/* Chevron still on the far left (due to row-reverse) */}
-                <FontAwesome5 name="chevron-left" size={16} color={COLORS.lightGray} style={styles.chevron} />
-              </TouchableOpacity>
-            </Link>
-          ))}
-        </ScrollView>
+        asChild // Use TouchableOpacity as the child component for styling/press handling
+     >
+        <TouchableOpacity style={styles.agentItem}>
+            {/* Icon centered at the top */}
+            <View style={styles.iconContainer}>
+                {/* Reduced icon size */}
+                <FontAwesome5 name={agent.icon} size={24} color={COLORS.primary} />
+            </View>
+            {/* Text below the icon */}
+            <View style={styles.agentTextContainer}>
+                <Text style={styles.agentName}>{agent.name}</Text>
+                {/* Removed numberOfLines to show full description */}
+                <Text style={styles.agentDescription}>{agent.description}</Text>
+            </View>
+            {/* Info icon can be placed differently if needed, or removed for grid simplicity */}
+            {/* <FontAwesome5 name="info-circle" size={22} color={COLORS.lightGray} style={styles.infoIcon} /> */}
+        </TouchableOpacity>
+     </Link>
+  );
+
+  return (
+    <SafeAreaView style={styles.safeArea}>
+      <View style={styles.container}>
+        <Text style={styles.title}>اختر الوكيل المناسب لك</Text>
+        <FlatList
+          data={agents}
+          renderItem={renderAgentItem}
+          keyExtractor={(item) => item.id}
+          numColumns={numColumns}
+          style={styles.flatList}
+          contentContainerStyle={styles.flatListContent}
+          showsVerticalScrollIndicator={false}
+        />
       </View>
     </SafeAreaView>
   );
@@ -102,56 +113,68 @@ const styles = StyleSheet.create({
   },
   container: {
     flex: 1,
-    paddingHorizontal: SIZES.padding / 2,
+    paddingHorizontal: 0, // Remove horizontal padding from main container for grid
     paddingTop: SIZES.padding,
   },
   title: {
     ...FONTS.h2,
     color: COLORS.text,
     textAlign: 'center',
-    marginBottom: SIZES.padding,
+    marginBottom: SIZES.padding * 1.2, // More space below title
     fontWeight: 'bold',
+    paddingHorizontal: SIZES.padding, // Add padding back for title
   },
-  scrollView: {
+  flatList: {
     flex: 1,
   },
-  scrollViewContent: {
+  flatListContent: {
+    paddingHorizontal: itemMargin / 2, // Half margin on the sides of the list
     paddingBottom: SIZES.padding,
   },
   agentItem: {
     backgroundColor: COLORS.white,
-    paddingVertical: SIZES.padding * 0.75,
-    paddingHorizontal: SIZES.padding / 2, // Adjust horizontal padding
-    borderRadius: SIZES.radius,
-    marginBottom: SIZES.base * 1.5,
-    flexDirection: 'row-reverse', // Reverse direction for RTL layout (Icon | Text | Chevron)
-    alignItems: 'center', // Center items vertically
-    borderWidth: 1,
-    borderColor: COLORS.lightGray,
+    borderRadius: SIZES.radius * 1.2, // Standard radius
+    marginBottom: itemMargin * 2, // Further increased bottom margin
+    marginHorizontal: itemMargin / 2, // Half margin between items
+    width: itemWidth, // Set calculated width
+    padding: SIZES.padding, // Use full padding value
+    alignItems: 'center', // Center content horizontally
+    // Keep shadow/elevation
+    // Shadow for iOS
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 3.84,
+    // Elevation for Android
+    elevation: 5,
+    // minHeight: 180, // Removed minHeight to allow cards to grow
   },
   iconContainer: {
-      width: 40, // Fixed width for icon container
-      alignItems: 'center', // Center icon horizontally
-      justifyContent: 'center', // Center icon vertically
-      marginLeft: SIZES.base, // Space between icon and text
+      width: 50, // Reduced container size
+      height: 50,
+      borderRadius: 25, // Adjust border radius for circle
+      backgroundColor: `${COLORS.primary}1A`, // Slightly different opacity
+      alignItems: 'center',
+      justifyContent: 'center',
+      marginBottom: SIZES.padding * 0.6, // Space below icon
+      // marginLeft removed, centering content now
   },
   agentTextContainer: {
-      flex: 1, // Allow text to take available space
-      // marginRight is removed as flexDirection is reversed
+      // flex: 1 removed, content is centered
+      alignItems: 'center', // Center text horizontally
   },
   agentName: {
-    ...FONTS.h4,
-    fontWeight: FONTS.h4.fontWeight as 'bold', // Explicitly cast fontWeight
-    color: COLORS.text,
-    marginBottom: SIZES.base / 2,
-    textAlign: 'right', // Align text right for Arabic
+    ...FONTS.h4, // Adjusted size for grid item
+    fontWeight: 'bold', // Keep bold
+    color: COLORS.black,
+    marginBottom: SIZES.base * 0.5, // Reduced spacing
+    textAlign: 'center', // Center align name
   },
   agentDescription: {
-    ...FONTS.body4,
+    ...FONTS.body4, // Changed back to body4 for better readability
     color: COLORS.text,
-    textAlign: 'right', // Align text right for Arabic
+    textAlign: 'center', // Center align description
+    paddingHorizontal: SIZES.base / 2, // Add slight horizontal padding
   },
-  chevron: {
-      marginLeft: SIZES.base * 1.5, // Space between text and chevron
-  }
+  // infoIcon style removed as the element is removed for simplicity in grid
 });

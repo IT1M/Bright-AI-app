@@ -9,6 +9,9 @@ import {
   KeyboardAvoidingView,
   Platform,
   ActivityIndicator, // Import ActivityIndicator
+  Clipboard, // Import Clipboard
+  Alert, // Import Alert for feedback (optional)
+  Animated, // Import Animated for typing indicator
 } from 'react-native';
 import { FontAwesome5 } from '@expo/vector-icons';
 import { COLORS, SIZES, FONTS } from '../src/theme';
@@ -19,6 +22,7 @@ import { GEMINI_API_KEY, GEMINI_API_URL } from '../src/config';
  * @property {string} id
  * @property {string} text
  * @property {('user'|'ai'|'error')} type
+ * @property {Date} timestamp
  */
 
 const ChatAgentBox = ({ agentName, description, placeholderText = "اكتب رسالتك هنا..." }) => {
@@ -26,6 +30,7 @@ const ChatAgentBox = ({ agentName, description, placeholderText = "اكتب رس
   const [messages, setMessages] = useState([]); // State for messages
   const [isLoading, setIsLoading] = useState(false); // State for loading indicator
   const scrollViewRef = useRef(null); // Ref for ScrollView
+  const dotOpacity = useRef([new Animated.Value(0.5), new Animated.Value(0.5), new Animated.Value(0.5)]).current; // For typing animation
 
   // Automatically scroll down when messages change
   useEffect(() => {
@@ -35,6 +40,23 @@ const ChatAgentBox = ({ agentName, description, placeholderText = "اكتب رس
     }
   }, [messages]);
 
+  // Typing indicator animation effect
+  useEffect(() => {
+    if (isLoading) {
+      const animations = dotOpacity.map((opacity) => {
+        return Animated.sequence([
+          Animated.timing(opacity, { toValue: 1, duration: 400, useNativeDriver: true }),
+          Animated.timing(opacity, { toValue: 0.5, duration: 400, useNativeDriver: true }),
+        ]);
+      });
+      Animated.loop(Animated.stagger(200, animations)).start();
+    } else {
+      dotOpacity.forEach(opacity => opacity.setValue(0.5)); // Reset opacity when not loading
+    }
+    // Cleanup function to stop animation if component unmounts while loading
+    return () => dotOpacity.forEach(opacity => opacity.stopAnimation());
+  }, [isLoading, dotOpacity]);
+
   const handleSend = async () => {
     if (!inputText.trim() || isLoading) return; // Don't send empty messages or while loading
 
@@ -43,6 +65,7 @@ const ChatAgentBox = ({ agentName, description, placeholderText = "اكتب رس
       id: Date.now().toString() + '-user', // Simple unique ID
       text: userMessageText,
       type: 'user',
+      timestamp: new Date(), // Add timestamp
     };
 
     // Add user message immediately and clear input
@@ -63,10 +86,10 @@ const ChatAgentBox = ({ agentName, description, placeholderText = "اكتب رس
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          // Simple text-only request structure for Gemini
-          contents: [{ parts: [{ text: userMessageText }] }],
+          // Add agent context to the prompt
+          contents: [{ parts: [{ text: `You are ${agentName}. ${description}. Please respond to the following user message based on your role:\n\nUser: ${userMessageText}\n\n${agentName}:` }] }],
           // Optional: Add generationConfig or safetySettings if needed
-          // generationConfig: { temperature: 0.7, maxOutputTokens: 100 },
+          // generationConfig: { temperature: 0.9, maxOutputTokens: 250 }, // Example adjustments
           // safetySettings: [{ category: "HARM_CATEGORY_...", threshold: "BLOCK_MEDIUM_AND_ABOVE" }]
         }),
       });
@@ -97,6 +120,7 @@ const ChatAgentBox = ({ agentName, description, placeholderText = "اكتب رس
         id: Date.now().toString() + '-ai',
         text: aiResponseText.trim(),
         type: 'ai',
+        timestamp: new Date(), // Add timestamp
       };
       setMessages(prev => [...prev, aiMessage]);
 
@@ -106,6 +130,7 @@ const ChatAgentBox = ({ agentName, description, placeholderText = "اكتب رس
         id: Date.now().toString() + '-error',
         text: `Error: ${error.message || 'Failed to get response.'}`,
         type: 'error',
+        timestamp: new Date(), // Add timestamp
       };
       setMessages(prev => [...prev, errorMessage]);
     } finally {
@@ -120,21 +145,48 @@ const ChatAgentBox = ({ agentName, description, placeholderText = "اكتب رس
     // ... DocumentPicker logic ...
   };
 
+  // Function to copy text to clipboard
+  const handleCopy = (textToCopy) => {
+    Clipboard.setString(textToCopy);
+    // Optional: Show feedback to the user
+    Alert.alert("تم النسخ", "تم نسخ نص الرسالة إلى الحافظة.");
+  };
+
+  // Function to clear chat messages
+  const handleClearChat = () => {
+    Alert.alert(
+      "مسح المحادثة",
+      "هل أنت متأكد أنك تريد مسح جميع الرسائل في هذه المحادثة؟",
+      [
+        { text: "إلغاء", style: "cancel" },
+        { text: "مسح", onPress: () => setMessages([]), style: "destructive" },
+      ]
+    );
+  };
+
   // Render individual message bubble
   const renderMessage = (message) => {
     const isUser = message.type === 'user';
+    const isAi = message.type === 'ai';
     const isError = message.type === 'error';
     const bubbleStyle = isUser ? styles.userBubble : (isError ? styles.errorBubble : styles.aiBubble);
     const textStyle = isUser ? styles.userMessageText : (isError ? styles.errorText : styles.aiMessageText);
 
     return (
-      <View
-        key={message.id}
-        style={[styles.messageBubble, bubbleStyle]}
-      >
-        <Text style={textStyle}>
-          {message.text}
-        </Text>
+      <View key={message.id} style={[styles.messageContainer, isUser ? styles.userMessageContainer : styles.aiMessageContainer]}>
+        <View style={[styles.messageBubble, bubbleStyle]}>
+          <Text style={textStyle}>{message.text}</Text>
+          <View style={styles.messageInfoContainer}>
+            <Text style={styles.timestampText}>
+              {message.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: true })}
+            </Text>
+            {isAi && (
+              <TouchableOpacity onPress={() => handleCopy(message.text)} style={styles.copyButton}>
+                <FontAwesome5 name="copy" size={14} color={COLORS.text} />
+              </TouchableOpacity>
+            )}
+          </View>
+        </View>
       </View>
     );
   };
@@ -146,8 +198,13 @@ const ChatAgentBox = ({ agentName, description, placeholderText = "اكتب رس
       keyboardVerticalOffset={Platform.OS === "ios" ? 100 : 0} // Adjust offset if needed
     >
       <View style={styles.header}>
-        <Text style={styles.agentName}>{agentName}</Text>
-        <Text style={styles.description}>{description}</Text>
+        <View style={styles.headerTextContainer}>
+            <Text style={styles.agentName}>{agentName}</Text>
+            <Text style={styles.description}>{description}</Text>
+        </View>
+        <TouchableOpacity onPress={handleClearChat} style={styles.clearButton}>
+            <FontAwesome5 name="trash-alt" size={20} color={COLORS.text} />
+        </TouchableOpacity>
       </View>
 
       {/* Message history */}
@@ -162,8 +219,10 @@ const ChatAgentBox = ({ agentName, description, placeholderText = "اكتب رس
         )}
         {messages.map(renderMessage)}
         {isLoading && (
-          <View style={styles.loadingContainer}>
-            <ActivityIndicator size="small" color={COLORS.primary} />
+          <View style={styles.typingIndicatorContainer}>
+            <Animated.View style={[styles.typingDot, { opacity: dotOpacity[0] }]} />
+            <Animated.View style={[styles.typingDot, { opacity: dotOpacity[1] }]} />
+            <Animated.View style={[styles.typingDot, { opacity: dotOpacity[2] }]} />
           </View>
         )}
       </ScrollView>
@@ -202,10 +261,18 @@ const styles = StyleSheet.create({
     flexDirection: 'column',
   },
   header: {
-    padding: SIZES.base * 1.5,
+    paddingHorizontal: SIZES.base * 1.5,
+    paddingVertical: SIZES.base,
     borderBottomWidth: 1,
     borderBottomColor: COLORS.lightGray,
     backgroundColor: COLORS.background,
+    flexDirection: 'row-reverse', // Align items for RTL
+    justifyContent: 'space-between', // Space out text and button
+    alignItems: 'center',
+  },
+  headerTextContainer: {
+      flex: 1, // Allow text to take available space
+      marginRight: SIZES.base, // Add space between text and button
   },
   agentName: {
     ...FONTS.h3,
@@ -217,6 +284,9 @@ const styles = StyleSheet.create({
     ...FONTS.body4,
     color: COLORS.text,
     textAlign: 'right',
+  },
+  clearButton: {
+      padding: SIZES.base, // Add padding for easier tapping
   },
   messageHistory: {
     flex: 1, // Takes up available space between header and input
@@ -233,24 +303,41 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     paddingVertical: SIZES.padding, // Give placeholder some space
   },
+   messageContainer: {
+    marginBottom: SIZES.base,
+    // No alignSelf here, handled by specific containers
+  },
+  userMessageContainer: {
+    alignItems: 'flex-end', // Align user content to the right
+  },
+  aiMessageContainer: {
+    alignItems: 'flex-start', // Align AI content to the left
+  },
   messageBubble: {
     paddingVertical: SIZES.base,
     paddingHorizontal: SIZES.base * 1.5,
     borderRadius: SIZES.radius,
-    marginBottom: SIZES.base,
-    maxWidth: '80%', // Prevent bubbles from taking full width
+    // Removed marginBottom, handled by messageContainer
+    maxWidth: '85%', // Allow slightly wider bubbles
+    minWidth: '20%', // Ensure small messages have some width
   },
   userBubble: {
     backgroundColor: COLORS.primary,
-    alignSelf: 'flex-end', // Align user messages to the right
+    // Removed duplicate backgroundColor
   },
   aiBubble: {
     backgroundColor: COLORS.lightGray, // Different background for AI
-    alignSelf: 'flex-start', // Align AI messages to the left
+    // alignSelf removed, handled by aiMessageContainer
   },
   errorBubble: {
       backgroundColor: '#FFD2D2', // Light red background for errors
-      alignSelf: 'flex-start',
+      // alignSelf removed, handled by aiMessageContainer
+  },
+   messageInfoContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between', // Space out timestamp and copy button
+    alignItems: 'center',
+    marginTop: SIZES.base / 2,
   },
   userMessageText: {
     ...FONTS.body4,
@@ -267,10 +354,23 @@ const styles = StyleSheet.create({
       color: '#D8000C', // Dark red text for errors
       textAlign: 'left',
   },
-  loadingContainer: {
-      alignSelf: 'flex-start', // Show loading near AI response area
-      marginVertical: SIZES.base,
-      marginLeft: SIZES.base * 1.5, // Indent like AI bubble
+  typingIndicatorContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    alignSelf: 'flex-start',
+    marginVertical: SIZES.base,
+    marginLeft: SIZES.base * 1.5,
+    paddingHorizontal: SIZES.base * 1.5,
+    paddingVertical: SIZES.base,
+    backgroundColor: COLORS.lightGray,
+    borderRadius: SIZES.radius,
+  },
+  typingDot: {
+      width: 8,
+      height: 8,
+      borderRadius: 4,
+      backgroundColor: COLORS.text, // Use text color for dots
+      marginHorizontal: 3,
   },
   inputArea: {
     flexDirection: 'row',
@@ -298,6 +398,17 @@ const styles = StyleSheet.create({
   },
   iconButton: {
     padding: SIZES.base,
+  },
+  timestampText: {
+    ...FONTS.body5, // Use body5 instead of caption
+    color: COLORS.text, // Use text (dark gray) instead of darkGray
+    marginTop: SIZES.base / 2,
+    // fontSize: 10, // Font size is now controlled by FONTS.body5 (which is 12)
+    // alignSelf: 'flex-end', // Timestamp is now part of messageInfoContainer
+  },
+   copyButton: {
+    marginLeft: SIZES.base, // Add space between timestamp and copy button
+    padding: 2, // Small padding for easier tap
   },
 });
 
