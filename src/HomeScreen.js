@@ -511,7 +511,7 @@ const HomeScreen = () => {
   };
 
   const handleContactPress = () => {
-    Linking.openURL('mailto:support@brightai.com');
+    Linking.openURL('mailto:yazeed1job@gmail.com');
   };
 
   // Handle errors from child components
